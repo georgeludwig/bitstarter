@@ -42,7 +42,12 @@ var cheerioHtmlFile = function(htmlfile) {
     return cheerio.load(fs.readFileSync(htmlfile));
 };
 
+var cheerioString = function(htmlString) {
+    return cheerio.load(htmlString);
+}
+
 var loadChecks = function(checksfile) {
+    console.log("checksfile:"+checksfile);
     return JSON.parse(fs.readFileSync(checksfile));
 };
 
@@ -70,24 +75,31 @@ if(require.main == module) {
     program
         .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
         .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
-        .option('-u, --url <html_file_url>', 'URL of index.html')
+        .option('-u, --url <url>', 'URL of index.html')
 	.parse(process.argv);
-    if(!(typeof program.file=='undefined')) {
-	var checkJson = checkFile(loadFile(program.file, program.checks);
+    process.argv.forEach(function (val, index, array) {
+	console.log(index + ': ' + val);
+    });
+    try {
+	var checkJson = checkFile(loadFile(program.file, program.checks));
 	var outJson = JSON.stringify(checkJson, null, 4);
 	console.log(outJson);
+    } catch(err) {
+    
     }
-    if(!(typeof program.url=='undefined')) {
+    try {
 	rest.get(program.url).on('complete', function(result) {
 	    if (result instanceof Error) {
 		sys.puts('Error: ' + result.message);
 		this.retry(5000); // try again after 5 sec
 	    } else {
-		var checkJson = checkHtmlFile(result, program.checks);
+		var checkJson = checkFile(cheerioString(result), program.checks);
 		var outJson = JSON.stringify(checkJson, null, 4);
 		console.log(outJson);
 	    }
 	});
+    } catch(err) {
+
     }
 } else {
     exports.checkHtmlFile = checkHtmlFile;
